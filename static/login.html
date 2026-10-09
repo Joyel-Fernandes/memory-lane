@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in – MemoryLane</title>
+  <style>
+    :root {
+      --bg: #e4edf1;          /* mist blue */
+      --bg-accent: #d3e3d8;   /* soft sage */
+      --card: #ffffff;
+      --ink: #1e3442;         /* deep slate blue, ~11:1 on white */
+      --ink-soft: #46606f;    /* ~6:1 on white */
+      --line: #7f9aa9;        /* input border, 3:1+ on white */
+      --primary: #2b5876;     /* ~7.5:1 with white text */
+      --primary-hover: #214660;
+      --focus: #b05a00;       /* warm amber focus ring, high visibility */
+      --serif: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { font-size: 100%; } /* respects the user's browser text size */
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: var(--sans);
+      font-size: 1.125rem;    /* 18px base */
+      line-height: 1.5;
+      color: var(--ink);
+      background:
+        radial-gradient(60rem 40rem at 10% 0%, var(--bg-accent) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .card {
+      width: 100%;
+      max-width: 30rem;
+      background: var(--card);
+      border-radius: 24px;
+      padding: 40px 36px 36px;
+      box-shadow: 0 10px 40px rgba(30, 52, 66, 0.12);
+    }
+
+    .brand { text-align: center; margin-bottom: 28px; }
+    .brand svg { width: 72px; height: 72px; }
+    .brand h1 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      line-height: 1.2;
+      font-weight: 700;
+      margin: 12px 0 8px;
+    }
+    .brand p { margin: 0; color: var(--ink-soft); }
+
+    .field { margin-bottom: 22px; }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      min-height: 56px;
+      padding: 12px 16px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+      border: 2px solid var(--line);
+      border-radius: 12px;
+    }
+
+    input::placeholder { color: #667f8d; }
+
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 96px; }
+
+    .toggle {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      min-height: 44px;
+      padding: 0 12px;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary);
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* Visible keyboard focus everywhere */
+    input:focus-visible,
+    button:focus-visible,
+    a:focus-visible {
+      outline: 4px solid var(--focus);
+      outline-offset: 2px;
+    }
+    input:focus { border-color: var(--primary); }
+
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 48px;
+      margin-bottom: 26px;
+      cursor: pointer;
+    }
+    .remember label { margin: 0; font-weight: 400; cursor: pointer; }
+    .remember input {
+      width: 28px;
+      height: 28px;
+      margin: 0;
+      accent-color: var(--primary);
+      cursor: pointer;
+      flex: none;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      min-height: 64px;
+      font: inherit;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--primary);
+      border: 0;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn:active { background: #1a3a50; }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 24px;
+    }
+    .links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 0 8px;
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+    .links a:hover { color: var(--primary-hover); }
+
+    @media (max-width: 480px) {
+      .card { padding: 32px 20px 24px; border-radius: 20px; }
+      .brand h1 { font-size: 1.75rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <header class="brand">
+      <!-- A winding lane leading to a home: the "memory lane" mark -->
+      <svg viewBox="0 0 72 72" role="img" aria-label="MemoryLane logo">
+        <circle cx="36" cy="36" r="36" fill="#d3e3d8"/>
+        <path d="M12 58 C 30 58, 18 44, 36 42 S 50 34, 40 30"
+              fill="none" stroke="#2b5876" stroke-width="5" stroke-linecap="round"/>
+        <path d="M32 30 L44 19 L56 30 V44 H32 Z" fill="#ffffff" stroke="#2b5876" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="41" y="34" width="6" height="10" rx="1" fill="#2b5876"/>
+      </svg>
+      <h1>Welcome to MemoryLane</h1>
+      <p>Log in to revisit your favorite memories.</p>
+    </header>
+
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email"
+               placeholder="name@example.com"
+               autocomplete="email" inputmode="email">
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-wrap">
+          <input type="password" id="password" name="password"
+                 placeholder="Enter your password"
+                 autocomplete="current-password">
+          <button type="button" class="toggle" id="togglePassword"
+                  aria-controls="password" aria-pressed="false">Show</button>
+        </div>
+      </div>
+
+      <div class="remember">
+        <input type="checkbox" id="remember" name="remember">
+        <label for="remember">Remember me</label>
+      </div>
+
+      <button type="submit" class="btn">Log In</button>
+    </form>
+
+    <nav class="links" aria-label="Account help">
+      <a href="/pages/forgot-password.html">Forgot password?</a>
+      <a href="/pages/register.html">Create an account</a>
+    </nav>
+  </main>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const passwordInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('togglePassword');
+
+    // Show / hide password (helps users who lose track of what they typed)
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+      toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
+      toggleBtn.setAttribute('aria-pressed', String(isHidden));
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault(); // stop the page from refreshing
+
+      // TODO: replace with a real authentication request.
+      // For now, simulate a successful login.
+      window.location.href = '/pages/setup.html';
+    });
+  </script>
+</body>
+</html>

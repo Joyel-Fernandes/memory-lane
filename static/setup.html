@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Reminiscence Memory Game Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #2b6cb0;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #2c5282;
+        }
+
+        #results {
+            margin-top: 30px;
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .card {
+            background: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3182ce;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Patient Reminiscence Setup</h2>
+    <div class="form-group">
+        <label>Patient Name:</label>
+        <input type="text" id="patientNameInput" value="Robert">
+    </div>
+    <div class="form-group">
+        <label>Birth Year:</label>
+        <input type="number" id="birthYear" value="1952">
+    </div>
+
+    <div class="form-group">
+        <label>Birth Place (City, Country/State):</label>
+        <input type="text" id="birthPlace" value="Detroit, Michigan">
+    </div>
+
+    <div class="form-group">
+        <label>Hobbies (comma separated):</label>
+        <input type="text" id="hobbies" value="Gardening, Motown music, Fishing">
+    </div>
+
+<button type="button" onclick="generateGame(event)">Generate Memory Game</button>
+
+    <div id="results" style="display:none;">
+        <h3>Generated Game Assets</h3>
+        <div id="gameData"></div>
+    </div>
+
+    <script>
+        async function generateGame(event) {
+    // 1. Stop the page from reloading!
+    if (event) {
+        event.preventDefault();
+    }
+
+    // 2. Change button text so you know it's working
+    const button = event ? event.target : document.querySelector('button');
+    const originalText = button.innerText;
+    button.innerText = "Generating game (AI thinking)...";
+    button.disabled = true;
+
+    try {
+        // Grab the data from the form
+        const patientName = document.getElementById('patientNameInput').value;
+        const birthYear = parseInt(document.getElementById('birthYear').value);
+        const birthPlace = document.getElementById('birthPlace').value;
+        const hobbies = document.getElementById('hobbies').value.split(',').map(h => h.trim());
+
+        // Save the patient's profile details
+        sessionStorage.setItem("patientProfile", JSON.stringify({
+            name: patientName,
+            location: birthPlace
+        }));
+
+        // Send to your FastAPI backend
+        const response = await fetch('http://127.0.0.1:8000/generate-game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                birth_year: birthYear,
+                birth_place: birthPlace,
+                hobbies: hobbies
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "Error generating game.");
+        }
+
+        // Save AI data and redirect!
+        sessionStorage.setItem("memoryGameData", JSON.stringify(data));
+        window.location.href = "/pages/dashboard.html";
+
+    } catch (err) {
+        alert("Error: " + err.message);
+        // Reset the button if there is an error
+        button.innerText = originalText;
+        button.disabled = false;
+    }
+}
+    </script>
+</body>
+
+</html>

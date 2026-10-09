@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memory Game – MemoryLane</title>
+  <style>
+    :root {
+      --bg: #e4edf1;
+      --bg-accent: #d3e3d8;
+      --card: #ffffff;
+      --ink: #1e3442;
+      --ink-soft: #46606f;
+      --line: #7f9aa9;
+      --line-soft: #c9d8e0;
+      --primary: #2b5876;
+      --primary-hover: #214660;
+      --sage: #e8f1ea;
+      --focus: #b05a00;
+      --good: #1f6b3a;
+      --serif: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--sans);
+      font-size: 1.125rem;
+      line-height: 1.5;
+      color: var(--ink);
+      background:
+        radial-gradient(60rem 40rem at 10% 0%, var(--bg-accent) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .page {
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    /* ---------- Header ---------- */
+    .top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .top h1 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      line-height: 1.2;
+      margin: 0 0 4px;
+    }
+    .top p { margin: 0; color: var(--ink-soft); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 56px;
+      padding: 0 28px;
+      font: inherit;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--primary);
+      border: 0;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-outline {
+      color: var(--primary);
+      background: #fff;
+      border: 2px solid var(--primary);
+    }
+    .btn-outline:hover { color: #fff; }
+
+    :where(a, button, input):focus-visible {
+      outline: 4px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* ---------- Dashboard layout ---------- */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .panel {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 10px 40px rgba(30, 52, 66, 0.12);
+    }
+    .panel-trivia { grid-column: 1 / -1; }
+
+    .panel h2 {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      line-height: 1.25;
+      margin: 0 0 4px;
+    }
+    .panel .hint {
+      margin: 0 0 20px;
+      color: var(--ink-soft);
+    }
+
+    /* Friendly message shown only while a container is still empty */
+    #music-list:empty::before,
+    #landmark-list:empty::before,
+    #trivia-container:empty::before {
+      display: block;
+      padding: 28px 20px;
+      text-align: center;
+      color: var(--ink-soft);
+      background: var(--sage);
+      border: 2px dashed var(--line);
+      border-radius: 16px;
+    }
+    #music-list:empty::before     { content: "Songs will appear here."; }
+    #landmark-list:empty::before  { content: "Places will appear here."; }
+    #trivia-container:empty::before { content: "Questions will appear here."; }
+
+    /* ---------- List items (music + landmarks) ---------- */
+    #music-list, #landmark-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-height: 72px;
+      padding: 14px 16px;
+      background: var(--sage);
+      border: 2px solid var(--line-soft);
+      border-radius: 16px;
+    }
+    .list-item-thumb {
+      flex: none;
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 12px;
+      background: #fff;
+    }
+    .list-item-text { flex: 1; min-width: 0; }
+    .list-item-title {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .list-item-sub {
+      display: block;
+      color: var(--ink-soft);
+      font-size: 1rem;
+    }
+    .list-item .btn { min-height: 48px; padding: 0 18px; }
+
+    /* ---------- Trivia card (flashcard) ---------- */
+    #trivia-container { display: grid; gap: 20px; }
+
+    .trivia-card {
+      max-width: 44rem;
+      margin: 0 auto;
+      width: 100%;
+      padding: 32px;
+      text-align: center;
+      background: #fff;
+      border: 3px solid var(--primary);
+      border-radius: 24px;
+      box-shadow: 0 6px 0 var(--line-soft), 0 14px 30px rgba(30, 52, 66, 0.1);
+    }
+    .trivia-card-image {
+      display: block;
+      max-width: 100%;
+      max-height: 240px;
+      margin: 0 auto 20px;
+      border-radius: 16px;
+      object-fit: cover;
+    }
+    .trivia-question {
+      font-family: var(--serif);
+      font-size: 1.75rem;
+      line-height: 1.3;
+      margin: 0 0 24px;
+    }
+    .trivia-options {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .trivia-option {
+      width: 100%;
+      min-height: 64px;
+      padding: 12px 20px;
+      font: inherit;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--sage);
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      cursor: pointer;
+    }
+    .trivia-option:hover { border-color: var(--primary); background: #dcebe0; }
+    .trivia-option.is-correct {
+      color: #fff;
+      background: var(--good);
+      border-color: var(--good);
+    }
+    .trivia-option.is-selected {
+      border-color: var(--primary);
+      background: #d7e6ee;
+    }
+    .trivia-feedback {
+      min-height: 1.5em;
+      margin: 20px 0 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--good);
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 760px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .panel { padding: 20px; border-radius: 20px; }
+      .trivia-card { padding: 22px 16px; }
+      .trivia-question { font-size: 1.5rem; }
+      .top h1 { font-size: 1.75rem; }
+      .top .btn { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="top">
+      <div>
+        <h1>Memory Game</h1>
+        <p>Take your time. There are no wrong answers here.</p>
+      </div>
+      <button type="button" class="btn btn-outline" id="startOver">Start Over</button>
+    </header>
+
+    <main class="dashboard">
+      <section class="panel" aria-labelledby="music-heading">
+        <h2 id="music-heading">Music of your Era</h2>
+        <p class="hint">Songs you may remember.</p>
+        <ul id="music-list"></ul>
+      </section>
+
+      <section class="panel" aria-labelledby="landmark-heading">
+        <h2 id="landmark-heading">Familiar Landmarks</h2>
+        <p class="hint">Places you may have visited.</p>
+        <ul id="landmark-list"></ul>
+      </section>
+
+      <section class="panel panel-trivia" aria-labelledby="trivia-heading">
+        <h2 id="trivia-heading">Trivia Challenge</h2>
+        <p class="hint">Pick the answer that feels right.</p>
+        <div id="trivia-container" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Handle the Start Over button
+    document.getElementById('startOver').addEventListener('click', () => {
+      sessionStorage.removeItem("memoryGameData");
+      window.location.href = '/pages/setup.html';
+    });
+
+    // Populate the game when the page loads
+    window.addEventListener('DOMContentLoaded', () => {
+      const rawData = sessionStorage.getItem("memoryGameData");
+
+      // Redirect back if no game data is present
+      if (!rawData) {
+        window.location.href = '/pages/setup.html';
+        return;
+      }
+
+      const gameData = JSON.parse(rawData);
+
+      // 1. Populate Music
+      const musicList = document.getElementById("music-list");
+      gameData.music_cues.forEach(song => {
+        const li = document.createElement("li");
+        li.className = "list-item";
+        li.innerHTML = `
+          <div class="list-item-text">
+            <span class="list-item-title">🎵 ${song}</span>
+          </div>
+        `;
+        musicList.appendChild(li);
+      });
+
+      // 2. Populate Landmarks
+      const landmarkList = document.getElementById("landmark-list");
+      gameData.local_landmarks.forEach(place => {
+        const li = document.createElement("li");
+        li.className = "list-item";
+        li.innerHTML = `
+          <div class="list-item-text">
+            <span class="list-item-title">📍 ${place}</span>
+          </div>
+        `;
+        landmarkList.appendChild(li);
+      });
+
+      // 3. Populate Trivia Cards
+      const triviaContainer = document.getElementById("trivia-container");
+      gameData.trivia_pairs.forEach((pair, index) => {
+        const card = document.createElement("div");
+        card.className = "trivia-card";
+        card.innerHTML = `
+          <h3 class="trivia-question">${pair.question}</h3>
+          <button type="button" class="btn" onclick="toggleAnswer(this)">Reveal Answer</button>
+          <p class="trivia-feedback" style="display: none; margin-top: 16px;">Answer: <strong>${pair.answer}</strong></p>
+        `;
+        triviaContainer.appendChild(card);
+      });
+    });
+
+    // Helper function to show/hide trivia answers
+    function toggleAnswer(buttonElement) {
+      const feedback = buttonElement.nextElementSibling;
+      const isHidden = feedback.style.display === "none";
+      feedback.style.display = isHidden ? "block" : "none";
+      buttonElement.textContent = isHidden ? "Hide Answer" : "Reveal Answer";
+    }
+  </script>
+</body>
+</html>

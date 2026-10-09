@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Lane - Reminiscence Therapy</title>
+    
+    <!-- Preconnect to Google Fonts for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Using Nunito for a highly legible, rounded, and friendly aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        // Calming & accessible palette
+                        brand: {
+                            bg: '#FDFBF7', // Cream background
+                            sidebar: '#1B3C2B', // Dark green
+                            sage: '#E2E8E4', // Soft sage for cards
+                            text: '#1C1917', // High contrast text (Stone 900)
+                            accent: '#4B7B61', // Lighter green for buttons
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Base typography - strict 18px base as requested */
+        html { font-size: 18px; }
+        body { 
+            background-color: #FDFBF7; 
+            color: #1C1917;
+            /* Smooth anti-aliasing for readability */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Checkbox interaction transitions */
+        .task-item {
+            transition: all 0.4s ease;
+        }
+        .task-text {
+            transition: opacity 0.4s ease, color 0.4s ease, text-decoration-color 0.4s ease;
+            text-decoration-color: transparent; /* Invisible strikethrough initially */
+        }
+        .task-completed .task-text {
+            opacity: 0.4;
+            text-decoration: line-through;
+            text-decoration-color: #1C1917; /* Visible strikethrough when checked */
+            text-decoration-thickness: 2px;
+        }
+
+        /* Custom styling for large, easy-to-tap checkboxes */
+        input[type="checkbox"] {
+            width: 1.75rem;
+            height: 1.75rem;
+            cursor: pointer;
+            accent-color: #4B7B61;
+            flex-shrink: 0;
+        }
+
+        /* Toggle switch styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #4B7B61;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #4B7B61;
+        }
+
+        /* Hide scrollbar for clean aesthetic */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Left Sidebar -->
+    <aside class="w-72 bg-brand-sidebar text-white flex flex-col transition-all duration-300 flex-shrink-0 relative shadow-xl z-20">
+        <!-- Logo Area -->
+        <div class="p-8 flex items-center gap-3">
+            <!-- Calming leaf SVG -->
+            <svg class="w-8 h-8 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4c-4.418 0-8 3.582-8 8s3.582 8 8 8c1.5 0 2.9-.4 4.1-1.1l3.2 1.1-1.1-3.2c.7-1.2 1.1-2.6 1.1-4.1 0-4.418-3.582-8-8-8z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c-2.21 0-4-1.79-4-4"></path>
+            </svg>
+            <span class="text-2xl font-bold tracking-wide">Memory Lane</span>
+        </div>
+
+        <!-- View Toggle -->
+        <div class="px-6 mb-8">
+            <div class="bg-black/20 p-4 rounded-xl flex flex-col gap-2">
+                <span class="text-sm text-gray-300 font-semibold uppercase tracking-wider">Current View</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-white text-base">Patient</span>
+                    
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="viewToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-transform duration-300 z-10"/>
+                        <label for="viewToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-500 cursor-pointer"></label>
+                    </div>
+                    
+                    <span class="text-gray-400 text-base">Family</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 px-4 overflow-y-auto">
+            <ul class="space-y-2">
+                <li>
+                    <a href="#" class="flex items-center gap-4 px-4 py-4 rounded-xl bg-white/10 text-white font-semibold transition-colors hover:bg-white/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        Today
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center gap-4 px-4 py-4 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        My journey
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center gap-4 px-4 py-4 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Play & remember
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center gap-4 px-4 py-4 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+                        Talk to Companion
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center gap-4 px-4 py-4 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        Family notes
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <!-- Settings at bottom -->
+        <div class="p-6">
+            <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Settings
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-y-auto bg-brand-bg text-brand-text">
+        
+        <!-- Header -->
+        <header class="bg-white/80 backdrop-blur-md sticky top-0 z-10 px-10 py-8 border-b border-gray-200 flex justify-between items-center shadow-sm">
+            <div>
+                <!-- Exact requested text -->
+                <h1 class="text-2xl font-bold text-gray-800">Welcome, <span id="patientName">Friend</span> - Your little corner of home</h1>
+                <p class="text-gray-500 mt-1 text-lg">It is a beautiful day to look back on fond memories.</p>
+            </div>
+            
+            <!-- Avatar -->
+            <div class="flex items-center gap-4 border-2 border-brand-sage p-2 rounded-full bg-white shadow-soft">
+                <img src="https://placehold.co/60x60/E2E8E4/1C1917?text=Smile" alt="Avatar" class="w-14 h-14 rounded-full object-cover">
+            </div>
+        </header>
+
+        <div class="p-10 max-w-7xl mx-auto w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                
+                <!-- Widget 1: Your Memory for Today -->
+                <div class="bg-white rounded-3xl shadow-soft border border-gray-100 overflow-hidden flex flex-col h-full hover:shadow-lg transition-shadow">
+                    <div class="p-6 bg-brand-sage/40 border-b border-brand-sage/60">
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <svg class="w-6 h-6 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Your Memory for Today
+                        </h2>
+                    </div>
+                    
+                    <div class="relative w-full h-56 bg-gray-100">
+                        <img src="https://images.unsplash.com/photo-1544681280-d2dcafed6c11?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="A soothing cup of tea in nature" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/800x400/E2E8E4/1C1917?text=Nature+Memory'">
+                        
+                        <!-- Exact requested location badge -->
+                        <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur text-brand-text px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2">
+                            <svg class="w-5 h-5 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <span id="patientLocation">Loading location...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-2xl mb-2">Summer Afternoons</h3>
+                            <p class="text-gray-600 line-clamp-2">Do you remember the quiet afternoons spent on the porch, watching the clouds and sharing stories over warm tea?</p>
+                        </div>
+                        <button class="mt-6 w-full bg-brand-sidebar hover:bg-brand-accent text-white py-4 rounded-2xl font-bold text-lg transition-colors flex items-center justify-center gap-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                            Listen to story
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Widget 2: Today's Interactive Rhythm -->
+                <div class="bg-white rounded-3xl shadow-soft border border-gray-100 overflow-hidden flex flex-col h-full xl:col-span-1">
+                    <div class="p-6 bg-[#FEF3C7]/40 border-b border-[#FEF3C7]">
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Today's Gentle Rhythm
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6 flex-1 bg-gradient-to-b from-white to-brand-bg/50">
+                        <p class="text-gray-600 mb-6">Your plan for today, designed for peace of mind.</p>
+                        
+                        <div class="space-y-4" id="schedule-container">
+                            <!-- Items will be struck through and faded via JS on click -->
+                            <label class="task-item flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl cursor-pointer hover:bg-brand-sage/20 shadow-sm">
+                                <input type="checkbox" class="schedule-checkbox border-2 border-brand-accent rounded-lg" aria-label="Mark Morning Chai complete">
+                                <div class="task-text flex flex-col">
+                                    <span class="font-bold text-xl">9:00 AM</span>
+                                    <span class="text-gray-700">Morning Chai & Reading</span>
+                                </div>
+                            </label>
+
+                            <label class="task-item flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl cursor-pointer hover:bg-brand-sage/20 shadow-sm">
+                                <input type="checkbox" class="schedule-checkbox border-2 border-brand-accent rounded-lg" aria-label="Mark Remember Together complete">
+                                <div class="task-text flex flex-col">
+                                    <span class="font-bold text-xl">11:30 AM</span>
+                                    <span class="text-gray-700">Remember Together</span>
+                                </div>
+                            </label>
+
+                            <label class="task-item flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl cursor-pointer hover:bg-brand-sage/20 shadow-sm">
+                                <input type="checkbox" class="schedule-checkbox border-2 border-brand-accent rounded-lg" aria-label="Mark Garden Walk complete">
+                                <div class="task-text flex flex-col">
+                                    <span class="font-bold text-xl">3:00 PM</span>
+                                    <span class="text-gray-700">Gentle Garden Walk</span>
+                                </div>
+                            </label>
+                            
+                            <label class="task-item flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl cursor-pointer hover:bg-brand-sage/20 shadow-sm">
+                                <input type="checkbox" class="schedule-checkbox border-2 border-brand-accent rounded-lg" aria-label="Mark Evening Rest complete">
+                                <div class="task-text flex flex-col">
+                                    <span class="font-bold text-xl">7:00 PM</span>
+                                    <span class="text-gray-700">Evening Rest & Music</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Widget 3: Play & Remember (Button Card) -->
+                <!-- Entire card acts as a button as requested -->
+                <button id="startGameBtn" class="bg-brand-sage hover:bg-[#D1DDD5] rounded-3xl shadow-soft border-2 border-transparent hover:border-brand-accent/30 transition-all duration-300 flex flex-col items-center justify-center p-10 text-center group h-full focus:outline-none focus:ring-4 focus:ring-brand-accent/50 xl:col-span-1 lg:col-span-2">
+                    <div class="bg-white p-6 rounded-full shadow-sm mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-16 h-16 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h2 class="text-3xl font-bold text-brand-sidebar mb-4 group-hover:text-black transition-colors">Play & remember</h2>
+                    <p class="text-xl text-gray-700 font-medium">Tiny questions, familiar faces, no pressure.</p>
+                    <div class="mt-8 px-6 py-3 bg-brand-sidebar text-white rounded-full font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2">
+                        Start Playing
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </div>
+                </button>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Quiz Container (Hidden by default) -->
+    <div id="quiz-container" class="hidden fixed inset-0 bg-brand-sidebar/90 backdrop-blur-sm z-50 flex items-center justify-center p-6 transition-opacity">
+        <!-- Inner Modal Card -->
+        <div class="bg-brand-bg w-full max-w-3xl min-h-[500px] rounded-[2rem] shadow-2xl p-10 relative flex flex-col">
+            <!-- Close button for fallback, though logic isn't required, it's good UX practice -->
+            <button id="closeQuizBtn" class="absolute top-6 right-6 text-gray-400 hover:text-brand-sidebar bg-gray-100 p-2 rounded-full transition-colors" aria-label="Close quiz">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <div class="text-center mt-4">
+                <h2 class="text-3xl font-bold text-brand-sidebar mb-2">Memory Quiz Placeholder</h2>
+                <p class="text-gray-500 text-lg">Logic to be implemented.</p>
+            </div>
+            
+            <!-- Area where your JS will inject the multiple-choice questions -->
+            <div id="quiz-content-area" class="flex-1 mt-8 flex items-center justify-center border-4 border-dashed border-brand-sage rounded-2xl">
+                <p class="text-gray-400 font-bold text-xl">Quiz Content Goes Here</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // --- 1. LOAD PATIENT PROFILE (Name & Location) ---
+        const rawProfile = sessionStorage.getItem("patientProfile");
+        if (rawProfile) {
+            const profile = JSON.parse(rawProfile);
+            // Inject the real data into Claude's header and badge elements[cite: 5]
+            document.getElementById('patientName').innerText = profile.name;
+            document.getElementById('patientLocation').innerText = profile.location;
+        } else {
+            // Security check: Send back to setup if no data exists
+            window.location.href = '/pages/setup.html';
+            return;
+        }
+
+        // --- 2. LOAD AI GAME DATA ---
+        const rawData = sessionStorage.getItem("memoryGameData");
+        if (!rawData) {
+            window.location.href = '/pages/setup.html';
+            return;
+        }
+        const gameData = JSON.parse(rawData);
+        const quizData = gameData.trivia_mcq; 
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+
+        // --- 3. KEEP CLAUDE'S INTERACTIVE RHYTHM LOGIC ---
+        // This maintains the strikethrough and fade effects on the checklist[cite: 5]
+        const checkboxes = document.querySelectorAll('.schedule-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const parentLabel = this.closest('.task-item');
+                if (this.checked) {
+                    parentLabel.classList.add('task-completed');
+                    parentLabel.style.transform = 'scale(0.98)';
+                    setTimeout(() => parentLabel.style.transform = 'scale(1)', 200);
+                } else {
+                    parentLabel.classList.remove('task-completed');
+                }
+            });
+        });
+
+
+        // --- 4. WIRE UP THE AI QUIZ LOGIC TO THE MODAL ---
+        const startGameBtn = document.getElementById('startGameBtn');
+        const quizContainer = document.getElementById('quiz-container');
+        const closeQuizBtn = document.getElementById('closeQuizBtn');
+        const quizContentArea = document.getElementById('quiz-content-area');
+
+        // Open Modal
+        startGameBtn.addEventListener('click', () => {
+            quizContainer.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            score = 0;
+            loadQuestion();
+        });
+
+        // Close Modal
+        closeQuizBtn.addEventListener('click', () => {
+            quizContainer.classList.add('hidden');
+        });
+
+        function loadQuestion() {
+            // Check if quiz is over
+            if (currentQuestionIndex >= quizData.length) {
+                document.querySelector('#quiz-container h2').innerText = "Great job!";
+                document.querySelector('#quiz-container p').innerText = "You have finished today's memory session.";
+                quizContentArea.innerHTML = `
+                    <div class="text-center w-full mt-4">
+                        <p class="text-2xl font-bold mb-6">You scored ${score} out of ${quizData.length}.</p>
+                        <button onclick="document.getElementById('closeQuizBtn').click()" class="bg-brand-sidebar text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-accent transition-colors">Return to Dashboard</button>
+                    </div>`;
+                return;
+            }
+
+            const currentQ = quizData[currentQuestionIndex];
+            
+            // Shuffle options so correct answer isn't always in the same spot
+            const shuffledOptions = currentQ.options.sort(() => Math.random() - 0.5);
+
+            // Build styled buttons using Tailwind CSS for the 4 options
+            let optionsHTML = shuffledOptions.map(opt => 
+                `<button class="quiz-option w-full p-4 text-left border-2 border-brand-sage rounded-xl font-semibold text-lg hover:border-brand-accent hover:bg-brand-sage/30 transition-all duration-200" 
+                onclick="checkAnswer('${opt.replace(/'/g, "\\'")}', '${currentQ.correct_answer.replace(/'/g, "\\'")}', this)">
+                ${opt}
+                </button>`
+            ).join('');
+
+            // Update the modal headers
+            document.querySelector('#quiz-container h2').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+            document.querySelector('#quiz-container p').innerText = currentQ.question;
+            
+            // Remove Claude's dashed border placeholder styles and inject buttons[cite: 5]
+            quizContentArea.className = "flex-1 mt-6 w-full"; 
+            quizContentArea.innerHTML = `
+                <div class="space-y-4 w-full">
+                    ${optionsHTML}
+                </div>
+                <div class="mt-8 text-right">
+                    <button id="nextBtn" style="display:none;" onclick="nextQuestion()" class="bg-brand-sidebar text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-accent transition-colors">Next Question</button>
+                </div>
+            `;
+        }
+
+        // Make game functions globally available to the HTML buttons
+        window.checkAnswer = function(selected, correct, buttonElement) {
+            const allButtons = document.querySelectorAll('.quiz-option');
+            
+            // Disable all buttons after a guess
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-75'); 
+            });
+
+            if (selected === correct) {
+                buttonElement.classList.remove('border-brand-sage', 'hover:bg-brand-sage/30', 'opacity-75');
+                buttonElement.classList.add('bg-green-600', 'text-white', 'border-green-600', 'opacity-100');
+                score++;
+            } else {
+                buttonElement.classList.remove('border-brand-sage', 'hover:bg-brand-sage/30', 'opacity-75');
+                buttonElement.classList.add('bg-red-600', 'text-white', 'border-red-600', 'opacity-100');
+                
+                // Highlight the correct answer in green so they learn from the mistake
+                allButtons.forEach(btn => {
+                    if (btn.innerText.trim() === correct) {
+                        btn.classList.remove('border-brand-sage', 'opacity-75');
+                        btn.classList.add('bg-green-600', 'text-white', 'border-green-600', 'opacity-100');
+                    }
+                });
+            }
+            document.getElementById('nextBtn').style.display = 'inline-block';
+        };
+
+        window.nextQuestion = function() {
+            currentQuestionIndex++;
+            loadQuestion();
+        };
+    });
+</script>
+</body>
+</html>
