@@ -121,7 +121,11 @@
     headers: {
         "Content-Type": "application/json",
     },
-    body: JSON.stringify(patientData),
+    body: JSON.stringify({
+                birth_year: birthYear,
+                birth_place: birthPlace,
+                hobbies: hobbies
+            }),
 });
 
 
