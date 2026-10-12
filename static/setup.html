@@ -116,15 +116,14 @@
         }));
 
         // Send to your FastAPI backend
-        const response = await fetch('http://127.0.0.1:8000/generate-game', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                birth_year: birthYear,
-                birth_place: birthPlace,
-                hobbies: hobbies
-            })
-        });
+    const response = await fetch("/generate-game", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify(patientData),
+});
+
 
         const data = await response.json();
 
