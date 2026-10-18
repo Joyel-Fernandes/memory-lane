@@ -45,6 +45,15 @@ class GameAssets(BaseModel):
     local_landmarks: list[str]
     trivia_mcq: list[TriviaMCQ]
 
+class LifeChapter(BaseModel):
+    era_name: str 
+    sensory_memory: str 
+    historical_milestone: str 
+
+class JourneySummary(BaseModel):
+    title: str 
+    chapters: list[LifeChapter]    
+
 @app.post("/generate-game")
 def generate_game(patient: PatientInfo):
     formative_era = patient.birth_year + 15
@@ -90,3 +99,50 @@ def generate_game(patient: PatientInfo):
         status_code=429, 
         detail="All Gemini API keys have exceeded their free-tier quota. Please try again later."
     )
+
+# --- Paste these new classes right below your GameAssets class ---
+class LifeChapter(BaseModel):
+    era_name: str 
+    sensory_memory: str 
+    historical_milestone: str 
+
+class JourneySummary(BaseModel):
+    title: str 
+    chapters: list[LifeChapter] 
+
+
+# --- Paste this new endpoint at the very bottom of main.py ---
+@app.post("/generate-journey")
+def generate_journey(patient: PatientInfo):
+    childhood = patient.birth_year + 10
+    young_adult = patient.birth_year + 20
+    
+    prompt = f"Create a comforting reminiscence therapy timeline for a patient from {patient.birth_place} (born {patient.birth_year}). Hobbies: {', '.join(patient.hobbies)}. Write 3 chronological chapters (Childhood around {childhood}, Young Adulthood around {young_adult}, and Later Life). Focus on positive, sensory details related to their hobbies and the culture of those specific eras."
+
+    if not api_keys:
+        raise HTTPException(status_code=500, detail="No API keys configured.")
+
+    for i, key in enumerate(api_keys):
+        try:
+            client = genai.Client(api_key=key)
+            response = client.models.generate_content(
+                model='gemini-3.8-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction="You are an empathetic reminiscence therapist. Write in a warm, validating, and soothing tone. Output strictly valid JSON matching the requested schema.",
+                    response_mime_type="application/json",
+                    response_schema=JourneySummary, 
+                    temperature=0.6,
+                ),
+            )
+            return json.loads(response.text)
+            
+        except ClientError as e:
+            if getattr(e, 'code', None) == 429 or "RESOURCE_EXHAUSTED" in str(e):
+                continue
+            raise HTTPException(status_code=getattr(e, 'code', 400), detail=str(e))
+                
+        except ServerError:
+            raise HTTPException(status_code=503, detail="Server busy. Please try again.")
+
+    raise HTTPException(status_code=429, detail="API quotas exceeded.")
