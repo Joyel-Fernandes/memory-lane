@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>The Daily Sort</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --dur: 1000ms; }
+  html, body { height: 100%; margin: 0; overflow: hidden; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif; user-select: none; -webkit-user-select: none; }
+
+  /* The flying object: only transform + opacity animate (GPU-friendly). */
+  #mover {
+    --x: 0px; --y: 0px; --s: 1;
+    position: fixed; left: 50%; top: 50%; z-index: 30;
+    width: 160px; height: 160px; border-radius: 9999px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 88px; line-height: 1; pointer-events: none;
+    transform: translate3d(calc(-50% + var(--x)), calc(-50% + var(--y)), 0) scale(var(--s));
+    transition: transform var(--dur) cubic-bezier(.45,.05,.25,1), opacity .5s ease, box-shadow .4s ease;
+    will-change: transform;
+  }
+  #mover .inner { display: flex; align-items: center; justify-content: center; }
+  #mover.held { box-shadow: 0 0 0 8px #fde68a, 0 0 40px 12px rgba(251,191,36,.35); } /* ring-4 ring-amber-200 look, scaled for a big target */
+  #mover.held .inner { animation: hold-pulse 2.2s ease-in-out infinite; }
+  @keyframes hold-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+  .slot { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;
+          font-size: 35px; line-height: 1; opacity: 0; transition: opacity .6s ease; }
+  .slot.shown { opacity: 1; }
+  .slot.leaving { opacity: 0; }
+  .nudge { animation: nudge 1.4s ease-in-out; }
+  @keyframes nudge { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+
+  button:focus-visible { outline: 5px solid #f59e0b; outline-offset: -5px; }
+  @media (prefers-reduced-motion: reduce) { #mover.held .inner, .nudge { animation: none; } }
+</style>
+</head>
+<body class="bg-orange-50">
+
+<main id="app" class="fixed inset-0 flex">
+  <!-- LEFT ZONE -->
+  <button id="zone-left" type="button" class="relative w-1/2 h-full bg-orange-50 flex flex-col items-center overflow-hidden text-left">
+    <span id="mark-left" aria-hidden="true" class="absolute top-6 left-1/2 -translate-x-1/2 text-[16rem] leading-none opacity-[.09] pointer-events-none"></span>
+    <h2 id="title-left" class="relative mt-24 text-5xl md:text-7xl font-bold text-stone-700 tracking-wide"></h2>
+    <div id="stack-left" class="absolute bottom-4 left-4 right-4 flex flex-wrap justify-center content-end gap-1 pointer-events-none"></div>
+  </button>
+
+  <!-- RIGHT ZONE -->
+  <button id="zone-right" type="button" class="relative w-1/2 h-full bg-teal-50 flex flex-col items-center overflow-hidden text-left">
+    <span id="mark-right" aria-hidden="true" class="absolute top-6 left-1/2 -translate-x-1/2 text-[16rem] leading-none opacity-[.09] pointer-events-none"></span>
+    <h2 id="title-right" class="relative mt-24 text-5xl md:text-7xl font-bold text-teal-900/80 tracking-wide"></h2>
+    <div id="stack-right" class="absolute bottom-4 left-4 right-4 flex flex-wrap justify-center content-end gap-1 pointer-events-none"></div>
+  </button>
+</main>
+
+<!-- Back button -->
+<a id="back" href="dashboard.html" class="fixed top-4 left-4 z-40 min-h-[56px] px-6 flex items-center gap-2 rounded-full bg-white/90 shadow-md text-xl font-semibold text-stone-700 active:bg-stone-100">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  Back to Dashboard
+</a>
+
+<!-- Centre tray (the tap target for picking up the object) -->
+<button id="tray" type="button" aria-label="Pick up the object"
+  class="fixed z-20 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 md:w-64 md:h-64 bg-white shadow-md rounded-full"></button>
+
+<!-- The object -->
+<div id="mover" aria-hidden="true"><span class="inner"></span></div>
+
+<!-- Gentle prompt -->
+<p id="hint" role="status" aria-live="polite"
+   class="fixed z-20 left-1/2 -translate-x-1/2 bottom-[18%] px-6 py-2 rounded-full bg-white/80 text-xl md:text-2xl text-stone-600 text-center whitespace-nowrap"></p>
+
+<script>
+/* ===========================================================
+   CONFIG — swap themes here.
+   Each theme: two zones (left / right) and a list of items.
+   `icon` can be an emoji or an inline SVG string (1em sized).
+   An item's `zone` must match a zone `key`.
+   =========================================================== */
+const DASHBOARD_URL = "dashboard.html";
+const ACTIVE_THEME = 0;
+const MAX_STACK = 10;      // completed items kept per zone before the oldest fade away
+const GLIDE_MS = 1000;     // glide duration (keep in sync with --dur)
+const PAUSE_MS = 500;      // pause at the soft barrier
+
+const svg = (inner) => `<svg viewBox="0 0 64 64" style="width:1em;height:1em" aria-hidden="true">${inner}</svg>`;
+const ICONS = {
+  pan: svg(`<circle cx="26" cy="36" r="21" fill="#475569"/><circle cx="26" cy="36" r="15.5" fill="#64748b"/><rect x="44" y="32" width="19" height="8" rx="4" fill="#92400e"/>`),
+  trowel: svg(`<rect x="28" y="3" width="8" height="23" rx="4" fill="#b45309"/><rect x="30" y="24" width="4" height="9" fill="#64748b"/><path d="M32 30C45 35 47 49 32 61C17 49 19 35 32 30Z" fill="#94a3b8"/>`),
+  can: svg(`<rect x="14" y="26" width="30" height="27" rx="6" fill="#4f9fcf"/><rect x="18" y="22" width="22" height="6" rx="3" fill="#3b82a8"/><path d="M44 40L58 22L63 26L46 48Z" fill="#3b82a8"/><rect x="55" y="14" width="9" height="11" rx="2" transform="rotate(38 59 19)" fill="#2f6f8f"/><path d="M14 33C2 33 2 47 14 47" stroke="#3b82a8" stroke-width="5" fill="none" stroke-linecap="round"/>`)
+};
+
+const THEMES = [
+  {
+    name: "Kitchen & Garden",
+    zones: {
+      left:  { key: "kitchen", label: "Kitchen", watermark: "🍳" },
+      right: { key: "garden",  label: "Garden",  watermark: "🌿" }
+    },
+    items: [
+      { id: "tomato", icon: "🍅",        zone: "kitchen" },
+      { id: "pan",    icon: ICONS.pan,    zone: "kitchen" },
+      { id: "plate",  icon: "🍽️",        zone: "kitchen" },
+      { id: "trowel", icon: ICONS.trowel, zone: "garden" },
+      { id: "can",    icon: ICONS.can,    zone: "garden" },
+      { id: "flower", icon: "🌻",        zone: "garden" }
+    ]
+  }
+];
+
+/* ===========================================================
+   GAME LOGIC
+   =========================================================== */
+const theme = THEMES[ACTIVE_THEME];
+const $ = (id) => document.getElementById(id);
+const mover = $("mover"), moverInner = mover.querySelector(".inner");
+const tray = $("tray"), hint = $("hint");
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+const sideOfKey = (key) => theme.zones.left.key === key ? "left" : "right";
+
+let current = null, held = false, busy = false, bag = [];
+
+$("back").href = DASHBOARD_URL;
+document.documentElement.style.setProperty("--dur", GLIDE_MS + "ms");
+for (const side of ["left", "right"]) {
+  const z = theme.zones[side];
+  $("title-" + side).textContent = z.label;
+  $("mark-" + side).textContent = z.watermark;
+  $("zone-" + side).setAttribute("aria-label", "Put the object in the " + z.label);
+  $("zone-" + side).addEventListener("click", () => onZone(side));
+}
+tray.addEventListener("click", onTray);
+
+function setPos(x, y, s) {
+  mover.style.setProperty("--x", x + "px");
+  mover.style.setProperty("--y", y + "px");
+  mover.style.setProperty("--s", s);
+}
+function say(t) { hint.textContent = t; }
+
+function nextItem() {
+  if (bag.length === 0) {
+    bag = [...theme.items].sort(() => Math.random() - .5);
+    if (current && bag[bag.length - 1].id === current.id) bag.reverse(); // avoid an immediate repeat
+  }
+  current = bag.pop();
+  moverInner.innerHTML = current.icon;
+}
+
+function setHeld(v) {
+  held = v;
+  mover.classList.toggle("held", v);
+  tray.setAttribute("aria-label", v ? "Object picked up. Tap a side to place it." : "Pick up the object");
+  say(v ? `Now tap the ${theme.zones.left.label} or the ${theme.zones.right.label}` : "Tap the object to pick it up");
+}
+
+function onTray() {
+  if (busy) return;
+  setHeld(!held);
+}
+
+function nudge() {
+  tray.classList.remove("nudge"); void tray.offsetWidth; tray.classList.add("nudge");
+}
+
+function onZone(side) {
+  if (busy) return;
+  if (!held) { say("Tap the object first"); nudge(); return; }
+  busy = true;
+  (theme.zones[side].key === current.zone) ? succeed(side) : gentleReturn(side);
+}
+
+/* Correct: glide into the next slot of that zone's stack. */
+async function succeed(side) {
+  const stack = $("stack-" + side);
+  while (stack.children.length >= MAX_STACK) {            // let the oldest quietly fade
+    const old = stack.firstElementChild; old.classList.add("leaving"); await wait(300); old.remove();
+  }
+  const slot = document.createElement("span");
+  slot.className = "slot"; slot.innerHTML = current.icon;
+  stack.appendChild(slot);
+
+  const r = slot.getBoundingClientRect();
+  const dx = r.left + r.width / 2 - innerWidth / 2;
+  const dy = r.top + r.height / 2 - innerHeight / 2;
+  const scale = r.width / mover.offsetWidth;
+
+  mover.classList.remove("held");
+  say("");
+  setPos(dx, dy, scale);
+  await wait(GLIDE_MS + 60);
+
+  slot.classList.add("shown");                            // object now "lives" in the stack
+  mover.style.transition = "none";                        // reset invisibly, then fade the next item in
+  mover.style.opacity = 0;
+  setPos(0, 0, 1);
+  nextItem();
+  void mover.offsetWidth;
+  mover.style.transition = "";
+  mover.style.opacity = 1;
+  held = false; busy = false;
+  setHeld(false);
+}
+
+/* Wrong zone: drift halfway, rest at a soft barrier, float home. No error cues. */
+async function gentleReturn(side) {
+  const zoneCx = side === "left" ? innerWidth * 0.25 : innerWidth * 0.75;
+  const dx = (zoneCx - innerWidth / 2) / 2;               // halfway to the zone
+  setPos(dx, 0, 1);
+  await wait(GLIDE_MS + PAUSE_MS);                        // glide + 0.5s pause
+  setPos(0, 0, 1);
+  await wait(GLIDE_MS);
+  busy = false;
+  setHeld(true);                                          // still held: ready for another try
+}
+
+/* Start */
+nextItem();
+setHeld(false);
+</script>
+</body>
+</html>

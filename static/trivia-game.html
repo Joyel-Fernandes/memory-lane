@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Trivia - Memory Lane</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Nunito', 'sans-serif'] },
+                    colors: {
+                        brand: { bg: '#FDFBF7', sidebar: '#1B3C2B', sage: '#E2E8E4', text: '#1C1917', accent: '#4B7B61' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>html { font-size: 18px; }</style>
+</head>
+<body class="min-h-screen bg-brand-bg text-brand-text flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="p-6 w-full flex justify-between items-center">
+        <a href="/pages/games-hub.html" class="text-brand-sidebar font-bold text-xl flex items-center hover:opacity-80 transition-opacity">
+            <svg class="h-8 w-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Back to Activities
+        </a>
+    </header>
+
+    <!-- Main Game Box -->
+    <main class="flex-1 flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-3xl min-h-[450px] rounded-[2rem] shadow-xl p-10 flex flex-col justify-between border border-brand-sage">
+            <div>
+                <h1 id="quiz-title" class="text-3xl font-extrabold text-brand-sidebar mb-2">Memory Trivia</h1>
+                <p id="quiz-question" class="text-gray-600 text-xl">Loading question...</p>
+            </div>
+            
+            <div id="quiz-content-area" class="my-8">
+                <!-- Buttons injected via JS -->
+            </div>
+
+            <div class="text-right">
+                <button id="nextBtn" style="display:none;" onclick="nextQuestion()" class="bg-brand-sidebar text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-accent transition-colors">Next Question</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawData = sessionStorage.getItem("memoryGameData");
+            if (!rawData) {
+                window.location.href = '/pages/setup.html';
+                return;
+            }
+
+            const gameData = JSON.parse(rawData);
+            const quizData = gameData.trivia_mcq;
+            let currentQuestionIndex = 0;
+            let score = 0;
+
+            const titleEl = document.getElementById('quiz-title');
+            const questionEl = document.getElementById('quiz-question');
+            const contentArea = document.getElementById('quiz-content-area');
+            const nextBtn = document.getElementById('nextBtn');
+
+            function loadQuestion() {
+                if (currentQuestionIndex >= quizData.length) {
+                    titleEl.innerText = "Wonderful job!";
+                    questionEl.innerText = "You have completed today's trivia session.";
+                    contentArea.innerHTML = `
+                        <div class="text-center w-full py-8">
+                            <p class="text-2xl font-bold mb-6">You got ${score} out of ${quizData.length} correct.</p>
+                            <a href="/pages/games-hub.html" class="inline-block bg-brand-sidebar text-white px-8 py-4 rounded-xl font-bold hover:bg-brand-accent transition-colors">Back to Hub</a>
+                        </div>`;
+                    nextBtn.style.display = 'none';
+                    return;
+                }
+
+                const currentQ = quizData[currentQuestionIndex];
+                const shuffledOptions = [...currentQ.options].sort(() => Math.random() - 0.5);
+
+                titleEl.innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+                questionEl.innerText = currentQ.question;
+
+                let optionsHTML = shuffledOptions.map(opt => 
+                    `<button class="quiz-option w-full p-4 text-left border-2 border-brand-sage rounded-2xl font-semibold text-lg hover:border-brand-accent hover:bg-brand-sage/30 transition-all duration-200 mb-3" 
+                    onclick="checkAnswer('${opt.replace(/'/g, "\\'")}', '${currentQ.correct_answer.replace(/'/g, "\\'")}', this)">
+                    ${opt}
+                    </button>`
+                ).join('');
+
+                contentArea.innerHTML = `<div class="space-y-3 w-full">${optionsHTML}</div>`;
+                nextBtn.style.display = 'none';
+            }
+
+            window.checkAnswer = function(selected, correct, buttonElement) {
+                const allButtons = document.querySelectorAll('.quiz-option');
+                allButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-75');
+                });
+
+                if (selected === correct) {
+                    buttonElement.classList.remove('border-brand-sage', 'hover:bg-brand-sage/30', 'opacity-75');
+                    buttonElement.classList.add('bg-green-600', 'text-white', 'border-green-600', 'opacity-100');
+                    score++;
+                } else {
+                    buttonElement.classList.remove('border-brand-sage', 'hover:bg-brand-sage/30', 'opacity-75');
+                    buttonElement.classList.add('bg-red-600', 'text-white', 'border-red-600', 'opacity-100');
+                    
+                    allButtons.forEach(btn => {
+                        if (btn.innerText.trim() === correct) {
+                            btn.classList.remove('border-brand-sage', 'opacity-75');
+                            btn.classList.add('bg-green-600', 'text-white', 'border-green-600', 'opacity-100');
+                        }
+                    });
+                }
+                nextBtn.style.display = 'inline-block';
+            };
+
+            window.nextQuestion = function() {
+                currentQuestionIndex++;
+                loadQuestion();
+            };
+
+            loadQuestion();
+        });
+    </script>
+</body>
+</html>

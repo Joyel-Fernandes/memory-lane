@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Companion - Memory Lane</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { bg: '#FDFBF7', sidebar: '#1B3C2B', sage: '#E2E8E4', text: '#1C1917', accent: '#4B7B61' }
+                    },
+                    fontFamily: { sans: ['Nunito', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Pulse animation for when the microphone is listening */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(75, 123, 97, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(75, 123, 97, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(75, 123, 97, 0); }
+        }
+        .listening-active { animation: pulse-ring 2s infinite; background-color: #4B7B61 !important; color: white !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-brand-bg font-sans flex flex-col items-center justify-center p-6">
+
+    <!-- Header Navigation -->
+    <header class="absolute top-0 left-0 w-full p-6 flex justify-start">
+        <button onclick="window.location.href='/pages/dashboard.html'" class="text-brand-sidebar font-bold text-xl flex items-center hover:opacity-80 transition-opacity">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Home
+        </button>
+    </header>
+
+    <main class="w-full max-w-2xl text-center flex flex-col items-center">
+        
+        <h1 class="text-4xl font-extrabold text-brand-sidebar mb-4">Your Voice Companion</h1>
+        <p class="text-xl text-gray-600 mb-12">Tap the button below and say hello.</p>
+
+        <!-- Big, Accessible Microphone Button -->
+        <button id="micBtn" class="bg-brand-sage text-brand-sidebar border-4 border-brand-accent rounded-full w-48 h-48 flex flex-col items-center justify-center shadow-lg transition-all duration-300 hover:bg-brand-sage/70 focus:outline-none">
+            <svg class="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+            </svg>
+            <span id="btnText" class="font-bold text-xl">Tap to Speak</span>
+        </button>
+
+        <!-- Text Feedback Area -->
+        <div class="mt-12 bg-white w-full p-8 rounded-3xl shadow-sm border border-brand-sage min-h-[150px] flex items-center justify-center">
+            <p id="transcriptOutput" class="text-2xl text-brand-text font-semibold text-gray-400">I am listening...</p>
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const micBtn = document.getElementById('micBtn');
+            const btnText = document.getElementById('btnText');
+            const transcriptOutput = document.getElementById('transcriptOutput');
+
+            // 1. Initialize Web Speech API for Listening (Speech-to-Text)
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                transcriptOutput.innerText = "Sorry, your browser doesn't support voice recognition.";
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false; // Stops listening after they finish a sentence
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            // 2. Initialize Speech Synthesis for Talking (Text-to-Speech)
+            const synth = window.speechSynthesis;
+
+            function speakOutLoud(text) {
+                // Cancel any currently playing speech
+                synth.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.pitch = 0.9; // Slightly lower pitch is calmer
+                utterance.rate = 0.85; // Slightly slower pace for elderly users
+                
+                // Try to find a gentle female voice if available
+                const voices = synth.getVoices();
+                const preferredVoice = voices.find(voice => voice.name.includes('Female') || voice.name.includes('Samantha'));
+                if (preferredVoice) utterance.voice = preferredVoice;
+
+                synth.speak(utterance);
+            }
+
+            // 3. Handle Button Clicks
+            micBtn.addEventListener('click', () => {
+                try {
+                    recognition.start();
+                    micBtn.classList.add('listening-active');
+                    btnText.innerText = "Listening...";
+                    transcriptOutput.innerText = "...";
+                    transcriptOutput.classList.remove('text-gray-400');
+                } catch (e) {
+                    console.log("Already listening.");
+                }
+            });
+
+            // 4. Process the spoken words
+            recognition.onresult = (event) => {
+                const spokenText = event.results[0][0].transcript;
+                transcriptOutput.innerText = `You said: "${spokenText}"`;
+                
+                // For a purely offline/free loop, we can just reply locally based on keywords
+                let reply = "It's so lovely to hear your voice. I am here with you.";
+                
+                if (spokenText.toLowerCase().includes("hello") || spokenText.toLowerCase().includes("hi")) {
+                    reply = "Hello there! I hope you are having a beautiful day.";
+                } else if (spokenText.toLowerCase().includes("sad") || spokenText.toLowerCase().includes("lonely")) {
+                    reply = "I'm sorry you are feeling that way. Remember that you are safe here, and I am listening.";
+                }
+
+                // Speak the reply out loud
+                speakOutLoud(reply);
+            };
+
+            // 5. Reset UI when they stop speaking
+            recognition.onspeechend = () => {
+                recognition.stop();
+            };
+
+            recognition.onend = () => {
+                micBtn.classList.remove('listening-active');
+                btnText.innerText = "Tap to Speak";
+            };
+
+            recognition.onerror = (event) => {
+                micBtn.classList.remove('listening-active');
+                btnText.innerText = "Tap to Speak";
+                transcriptOutput.innerText = "I didn't quite catch that. Could you try again?";
+            };
+        });
+    </script>
+</body>
+</html>
