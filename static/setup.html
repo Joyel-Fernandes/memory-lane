@@ -1,152 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Reminiscence Memory Game Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Setup – Memory Lane</title>
+
+    <!-- Google Fonts: Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            bg: '#FDFBF7',      // Warm cream background
+                            sidebar: '#1B3C2B', // Deep forest green
+                            sage: '#E2E8E4',    // Soft sage accents
+                            text: '#1C1917',    // High-contrast dark stone
+                            accent: '#4B7B61',  // Calming leaf green
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 30px -5px rgba(27, 60, 43, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
+        html { font-size: 18px; }
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            max-width: 600px;
-            line-height: 1.6;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-weight: bold;
-        }
-
-        input {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background-color: #2b6cb0;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        button:hover {
-            background-color: #2c5282;
-        }
-
-        #results {
-            margin-top: 30px;
-            background: #f7fafc;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .card {
-            background: white;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-left: 4px solid #3182ce;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background-color: #FDFBF7;
+            color: #1C1917;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
     </style>
 </head>
+<body class="min-h-screen bg-brand-bg text-brand-text flex flex-col items-center justify-center p-6">
 
-<body>
+    <!-- Main Setup Card -->
+    <main class="w-full max-w-2xl bg-white rounded-3xl shadow-soft border-2 border-brand-sage p-8 sm:p-12">
 
-    <h2>Patient Reminiscence Setup</h2>
-    <div class="form-group">
-        <label>Patient Name:</label>
-        <input type="text" id="patientNameInput" value="Robert">
-    </div>
-    <div class="form-group">
-        <label>Birth Year:</label>
-        <input type="number" id="birthYear" value="1952">
-    </div>
+        <!-- Brand Header -->
+        <header class="flex flex-col items-center text-center mb-8">
+            <div class="bg-brand-sidebar text-white px-5 py-3 rounded-2xl flex items-center gap-3 shadow-sm mb-5">
+                <svg class="w-7 h-7 flex-shrink-0 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4c-4.418 0-8 3.582-8 8s3.582 8 8 8c1.5 0 2.9-.4 4.1-1.1l3.2 1.1-1.1-3.2c.7-1.2 1.1-2.6 1.1-4.1 0-4.418-3.582-8-8-8z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c-2.21 0-4-1.79-4-4"></path>
+                </svg>
+                <span class="text-xl font-bold tracking-wide">Memory Lane</span>
+            </div>
 
-    <div class="form-group">
-        <label>Birth Place (City, Country/State):</label>
-        <input type="text" id="birthPlace" value="Detroit, Michigan">
-    </div>
+            <h1 class="text-3xl font-extrabold text-brand-sidebar">Patient Reminiscence Setup</h1>
+            <p class="text-gray-600 mt-2 text-lg">Share a few familiar details so we can personalize today's corner of home.</p>
+        </header>
 
-    <div class="form-group">
-        <label>Hobbies (comma separated):</label>
-        <input type="text" id="hobbies" value="Gardening, Motown music, Fishing">
-    </div>
+        <!-- Gentle Status Banner (Replaces jarring browser alerts) -->
+        <div id="statusBanner" class="hidden mb-6 p-4 rounded-2xl bg-amber-50 border-2 border-amber-200 text-brand-text text-base font-semibold" role="status" aria-live="polite"></div>
 
-<button type="button" onclick="generateGame(event)">Generate Memory Game</button>
+        <!-- Setup Form -->
+        <form id="setupForm" onsubmit="generateGame(event)" class="space-y-6">
 
-    <div id="results" style="display:none;">
-        <h3>Generated Game Assets</h3>
-        <div id="gameData"></div>
-    </div>
+            <div>
+                <label for="patientNameInput" class="block font-bold text-brand-sidebar mb-2">
+                    Patient Name
+                </label>
+                <input
+                    type="text"
+                    id="patientNameInput"
+                    value="Robert"
+                    required
+                    placeholder="e.g., Robert"
+                    class="w-full px-5 py-4 rounded-2xl bg-brand-bg border-2 border-brand-sage text-brand-text text-lg font-semibold focus:outline-none focus:border-brand-accent focus:bg-white transition-colors"
+                >
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label for="birthYear" class="block font-bold text-brand-sidebar mb-2">
+                        Birth Year
+                    </label>
+                    <input
+                        type="number"
+                        id="birthYear"
+                        value="1952"
+                        min="1900"
+                        max="2026"
+                        required
+                        placeholder="e.g., 1952"
+                        class="w-full px-5 py-4 rounded-2xl bg-brand-bg border-2 border-brand-sage text-brand-text text-lg font-semibold focus:outline-none focus:border-brand-accent focus:bg-white transition-colors"
+                    >
+                </div>
+
+                <div>
+                    <label for="birthPlace" class="block font-bold text-brand-sidebar mb-2">
+                        Birth Place (City, State/Country)
+                    </label>
+                    <input
+                        type="text"
+                        id="birthPlace"
+                        value="Detroit, Michigan"
+                        required
+                        placeholder="e.g., Detroit, Michigan"
+                        class="w-full px-5 py-4 rounded-2xl bg-brand-bg border-2 border-brand-sage text-brand-text text-lg font-semibold focus:outline-none focus:border-brand-accent focus:bg-white transition-colors"
+                    >
+                </div>
+            </div>
+
+            <div>
+                <label for="hobbies" class="block font-bold text-brand-sidebar mb-2">
+                    Favorite Hobbies & Interests <span class="font-normal text-gray-500 text-base">(comma separated)</span>
+                </label>
+                <input
+                    type="text"
+                    id="hobbies"
+                    value="Gardening, Motown music, Fishing"
+                    required
+                    placeholder="e.g., Gardening, Motown music, Fishing"
+                    class="w-full px-5 py-4 rounded-2xl bg-brand-bg border-2 border-brand-sage text-brand-text text-lg font-semibold focus:outline-none focus:border-brand-accent focus:bg-white transition-colors"
+                >
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2">
+                <button
+                    type="submit"
+                    id="generateBtn"
+                    class="w-full bg-brand-sidebar hover:bg-brand-accent disabled:opacity-75 text-white py-5 px-8 rounded-2xl font-bold text-xl shadow-md transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer focus:outline-none focus:ring-4 focus:ring-brand-accent/40"
+                >
+                    <svg id="btnSpinner" class="hidden animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="btnText">Generate Memory Space</span>
+                </button>
+            </div>
+        </form>
+
+    </main>
 
     <script>
         async function generateGame(event) {
-    // 1. Stop the page from reloading!
-    if (event) {
-        event.preventDefault();
-    }
+            if (event) {
+                event.preventDefault();
+            }
 
-    // 2. Change button text so you know it's working
-    const button = event ? event.target : document.querySelector('button');
-    const originalText = button.innerText;
-    button.innerText = "Generating game (AI thinking)...";
-    button.disabled = true;
+            const button = document.getElementById('generateBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const statusBanner = document.getElementById('statusBanner');
 
-    try {
-        // Grab the data from the form
-        const patientName = document.getElementById('patientNameInput').value;
-        const birthYear = parseInt(document.getElementById('birthYear').value);
-        const birthPlace = document.getElementById('birthPlace').value;
-        const hobbies = document.getElementById('hobbies').value.split(',').map(h => h.trim());
+            // Hide any previous status message
+            statusBanner.classList.add('hidden');
+            statusBanner.innerText = '';
 
-        // Save the patient's profile details
-        sessionStorage.setItem("patientProfile", JSON.stringify({
-            name: patientName,
-            location: birthPlace
-        }));
+            // Read and sanitize inputs
+            const patientName = document.getElementById('patientNameInput').value.trim() || "Friend";
+            const birthYear = parseInt(document.getElementById('birthYear').value, 10);
+            const birthPlace = document.getElementById('birthPlace').value.trim();
+            const hobbies = document.getElementById('hobbies').value
+                .split(',')
+                .map(h => h.trim())
+                .filter(Boolean);
 
-        // Send to your FastAPI backend
-    const response = await fetch("/generate-game", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-                birth_year: birthYear,
-                birth_place: birthPlace,
-                hobbies: hobbies
-            }),
-});
+            if (!birthYear || !birthPlace || hobbies.length === 0) {
+                statusBanner.innerText = "Please fill in the birth year, birth place, and at least one hobby to continue.";
+                statusBanner.classList.remove('hidden');
+                return;
+            }
 
+            // Set calming loading state
+            const originalText = btnText.innerText;
+            btnText.innerText = "Preparing your personalized memories...";
+            btnSpinner.classList.remove('hidden');
+            button.disabled = true;
 
-        const data = await response.json();
+            try {
+                // Save patient profile (includes birthYear & hobbies for My Journey, plus name & location for Dashboard)
+                sessionStorage.setItem("patientProfile", JSON.stringify({
+                    name: patientName,
+                    location: birthPlace,
+                    birthYear: birthYear,
+                    hobbies: hobbies
+                }));
 
-        if (!response.ok) {
-            throw new Error(data.detail || "Error generating game.");
+                // Send request to FastAPI backend
+                const response = await fetch("/generate-game", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        birth_year: birthYear,
+                        birth_place: birthPlace,
+                        hobbies: hobbies
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "Unable to prepare the session right now.");
+                }
+
+                // Clear any old cached journey so a new profile generates a fresh timeline
+                sessionStorage.removeItem("journeyData");
+
+                // Save AI data and redirect to dashboard
+                sessionStorage.setItem("memoryGameData", JSON.stringify(data));
+                window.location.href = "/pages/dashboard.html";
+
+            } catch (err) {
+                statusBanner.innerText = "We couldn't connect right now: " + err.message + " Please try again in a moment.";
+                statusBanner.classList.remove('hidden');
+
+                // Restore button state
+                btnText.innerText = originalText;
+                btnSpinner.classList.add('hidden');
+                button.disabled = false;
+            }
         }
-
-        // Save AI data and redirect!
-        sessionStorage.setItem("memoryGameData", JSON.stringify(data));
-        window.location.href = "/pages/dashboard.html";
-
-    } catch (err) {
-        alert("Error: " + err.message);
-        // Reset the button if there is an error
-        button.innerText = originalText;
-        button.disabled = false;
-    }
-}
     </script>
 </body>
-
 </html>
